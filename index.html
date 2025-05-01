@@ -1,0 +1,176 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Firebase JS SDK v9 (modular) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, onValue, off } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDzxbolZg67a4WmC6-4d4X-A4M9-oViKCU",
+        authDomain: "muhammedhm-f71d2.firebaseapp.com",
+        projectId: "muhammedhm-f71d2",
+        storageBucket: "muhammedhm-f71d2.firebasestorage.app",
+        messagingSenderId: "901266153974",
+        appId: "1:901266153974:web:c4137b4a2d7f1db93867d7"
+      
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const tempRef = ref(db, '/dhtSensor');
+
+    const sensorData = document.getElementById('sensorData');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    let unsubscribe = null;
+
+    function startListening() {
+      if (unsubscribe) return; // already listening
+      sensorData.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+      unsubscribe = onValue(tempRef, (snapshot) => {
+        const data = snapshot.val();
+        sensorData.innerHTML = '';
+        if (data) {
+          const keys = Object.keys(data);
+          keys.sort((a, b) => data[b].timestamp.localeCompare(data[a].timestamp)); // Sort by timestamp string
+          keys.forEach(key => {
+            const record = data[key];
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${record.temperature}</td>
+              <td>${record.humidity}</td>
+              <td>${record.timestamp}</td>
+            `;
+            sensorData.appendChild(row);
+          });
+        } else {
+          sensorData.innerHTML = '<tr><td colspan="3">No data available</td></tr>';
+        }
+      }, (error) => {
+        console.error("Error getting data: ", error);
+        sensorData.innerHTML = '<tr><td colspan="3">Error loading data</td></tr>';
+      });
+    }
+
+    function stopListening() {
+      if (unsubscribe) {
+        off(tempRef);
+        unsubscribe = null;
+      }
+    }
+
+    startBtn.addEventListener('click', startListening);
+    stopBtn.addEventListener('click', stopListening);
+  </script>
+
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" crossorigin="anonymous">
+
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364); /* dark gradient */
+      text-align: center;
+      padding: 40px 20px;
+      color: #ffffff;
+    }
+    .card {
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 900px;
+      margin: auto;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #444;
+      text-align: center;
+    }
+    th {
+      background-color: #009688; /* Teal */
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    tr:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    .btn-container {
+      margin-top: 20px;
+    }
+    button {
+      background-color: #009688;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #00796b;
+    }
+
+    /* Floating link button */
+    .floating-link {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #009688;
+      color: white;
+      padding: 15px;
+      border-radius: 50%;
+      font-size: 20px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 999;
+      transition: background-color 0.3s;
+    }
+    .floating-link:hover {
+      background-color: #00796b;
+    }
+  </style>
+</head>
+<body>
+  <h2>ESP32 DHT Sensor Monitor (History)</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Temperature (°C)</th>
+          <th>Humidity (%)</th>
+          <th>Timestamp (Raw)</th>
+        </tr>
+      </thead>
+      <tbody id="sensorData">
+        <tr><td colspan="3">Press "Start" to load data</td></tr>
+      </tbody>
+    </table>
+    <div class="btn-container">
+      <button id="startBtn"><i class="fas fa-play"></i> Start</button>
+      <button id="stopBtn"><i class="fas fa-stop"></i> Stop</button>
+    </div>
+  </div>
+
+  <!-- Floating Google Sheet Link -->
+  <a href="https://docs.google.com/spreadsheets/d/1wT_yQ4jI6ydZl9PajDYrujplg6tuRwYulZXt1f68iWk/edit?gid=0#gid=0" 
+     target="_blank" 
+     class="floating-link" 
+     title="Open Google Sheet">
+    <i class="fas fa-link"></i>
+  </a>
+</body>
+</html>
